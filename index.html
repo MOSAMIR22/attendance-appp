@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <title>تسجيل الغياب</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.72/pdfmake.min.js"></script>
-  <script src="vfs_fonts.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.72/vfs_fonts.js"></script>
   <style>
     body { font-family: 'Cairo', sans-serif; direction: rtl; background: #f9f9f9; padding: 20px; max-width: 700px; margin: auto; }
     h1 { text-align: center; color: #333366; }
@@ -19,18 +19,14 @@
 <body>
   <h1>نظام تسجيل الغياب</h1>
 
+  <!-- شاشة تسجيل دخول المدرس -->
   <div id="teacher-login" class="teacher-controls">
-    <h3>إعداد كود المدرس</h3>
-    <input type="password" id="new-code" placeholder="أدخل كود المدرس لأول مرة">
-    <button onclick="saveTeacherCode()">حفظ الكود</button>
-  </div>
-
-  <div id="teacher-access" class="teacher-controls hidden">
     <h3>تسجيل دخول المدرس</h3>
     <input type="password" id="teacher-code" placeholder="أدخل كود المدرس">
     <button onclick="verifyTeacher()">دخول</button>
   </div>
 
+  <!-- المحتوى الذي يظهر بعد تسجيل دخول المدرس -->
   <div id="main-content" class="hidden">
     <div class="teacher-controls">
       <input type="text" id="lecture-name" placeholder="اسم المحاضرة">
@@ -66,10 +62,28 @@
   <script>
     let students = [];
 
+    // عند تحميل الصفحة، تحقق من الكود المحفوظ للمُدرس
     window.onload = () => {
       const storedCode = localStorage.getItem("teacherCode");
-      document.getElementById(storedCode ? "teacher-access" : "teacher-login").classList.remove("hidden");
+      // إذا كان الكود موجودًا، يتم السماح بالوصول إلى المحتوى
+      document.getElementById(storedCode ? "teacher-login" : "main-content").classList.add("hidden");
+      if (storedCode) {
+        document.getElementById("main-content").classList.remove("hidden");
+      }
     };
+
+    function verifyTeacher() {
+      const enteredCode = document.getElementById("teacher-code").value.trim();
+      const storedCode = localStorage.getItem("teacherCode");
+
+      // تحقق من الكود المدخل، وإذا كان صحيحًا، اعرض المحتوى
+      if (enteredCode === storedCode) {
+        document.getElementById("teacher-login").classList.add("hidden");
+        document.getElementById("main-content").classList.remove("hidden");
+      } else {
+        alert("كود غير صحيح.");
+      }
+    }
 
     function saveTeacherCode() {
       const code = document.getElementById("new-code").value.trim();
@@ -79,32 +93,6 @@
         location.reload();
       } else {
         alert("الكود يجب أن يكون 3 أحرف أو أكثر.");
-      }
-    }
-
-    function verifyTeacher() {
-      const entered = document.getElementById("teacher-code").value.trim();
-      if (entered === localStorage.getItem("teacherCode")) {
-        document.getElementById("main-content").classList.remove("hidden");
-        document.querySelectorAll(".teacher-controls").forEach(e => e.classList.remove("hidden"));
-        document.getElementById("teacher-access").classList.add("hidden");
-      } else {
-        alert("كود غير صحيح.");
-      }
-    }
-
-    function changeTeacherCode() {
-      const oldCode = document.getElementById("old-code").value.trim();
-      const newCode = document.getElementById("change-code").value.trim();
-      if (oldCode !== localStorage.getItem("teacherCode")) {
-        alert("الكود الحالي غير صحيح.");
-        return;
-      }
-      if (newCode.length >= 3) {
-        localStorage.setItem("teacherCode", newCode);
-        alert("تم تغيير الكود.");
-      } else {
-        alert("الكود الجديد يجب أن يكون 3 أحرف أو أكثر.");
       }
     }
 
@@ -130,20 +118,22 @@
     function generatePDF() {
       const lecture = document.getElementById("lecture-name").value.trim() || "محاضرة غير مسماة";
       const today = new Date().toLocaleDateString("ar-EG");
+
       const docDefinition = {
         content: [
           { text: "تقرير الغياب", style: "header", alignment: "center" },
           { text: `اسم المحاضرة: ${lecture}`, margin: [0, 10, 0, 0] },
           { text: `التاريخ: ${today}`, margin: [0, 0, 0, 10] },
           { text: "قائمة الحضور:" },
-          { ol: students }
+          {
+            ol: students.map((name, i) => `${i + 1}- ${name}`)
+          }
         ],
         defaultStyle: { font: 'Cairo' },
-        styles: {
-          header: { fontSize: 18, bold: true }
-        }
+        styles: { header: { fontSize: 18, bold: true } }
       };
-      pdfMake.createPdf(docDefinition).download(`${lecture}-${today}.pdf`);
+
+      pdfMake.createPdf(docDefinition).open(); // عرض الـ PDF في نافذة جديدة
     }
 
     function resetAll() {
