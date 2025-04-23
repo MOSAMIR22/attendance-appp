@@ -105,9 +105,17 @@
 
     <div class="teacher-controls code-change">
       <h4>تغيير كود المدرس</h4>
+      <label for="old-code">الكود الحالي:</label>
+      <input type="password" id="old-code">
+
       <label for="change-code">كود جديد:</label>
       <input type="password" id="change-code">
+
       <button onclick="changeTeacherCode()">تغيير الكود</button>
+
+      <p style="color: #aa0000; font-size: 0.9em; margin-top:10px;">
+        إذا نسيت الكود، يجب مسح بيانات المتصفح من خلال "إعدادات الموقع" لإعادة ضبط النظام.
+      </p>
     </div>
   </div>
 
@@ -147,13 +155,22 @@
     }
 
     function changeTeacherCode() {
+      const oldCode = document.getElementById("old-code").value.trim();
       const newCode = document.getElementById("change-code").value.trim();
+      const saved = localStorage.getItem("teacherCode");
+
+      if (oldCode !== saved) {
+        alert("الكود الحالي غير صحيح.");
+        return;
+      }
+
       if (newCode.length >= 3) {
         localStorage.setItem("teacherCode", newCode);
         alert("تم تغيير كود المدرس بنجاح.");
+        document.getElementById("old-code").value = "";
         document.getElementById("change-code").value = "";
       } else {
-        alert("الكود يجب أن يكون 3 أحرف أو أكثر.");
+        alert("الكود الجديد يجب أن يكون 3 أحرف أو أكثر.");
       }
     }
 
@@ -203,5 +220,4 @@
     }
   </script>
 </body>
-</html>
 </html>
