@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>تسجيل الغياب</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/plugins/addFonts.js"></script>
   <style>
     body { font-family: 'Arial', sans-serif; direction: rtl; padding: 20px; background-color: #f4f4f4; }
     label, input, button { display: block; margin: 10px 0; }
@@ -95,7 +96,7 @@
       const doc = new jsPDF();
       const date = new Date().toLocaleDateString('ar-EG');
 
-      doc.setFont('Helvetica');
+      doc.setFont('Amiri', 'normal'); // تعيين الخط العربي
       doc.setFontSize(16);
       doc.text(`تقرير غياب المحاضرة`, 105, 20, { align: "center" });
       doc.setFontSize(12);
