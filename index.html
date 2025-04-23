@@ -2,96 +2,41 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <title>تسجيل الغياب - يدعم العربية</title>
+  <title>تسجيل الغياب</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.72/pdfmake.min.js"></script>
   <script src="vfs_fonts.js"></script>
   <style>
-    body {
-      font-family: 'Cairo', sans-serif;
-      direction: rtl;
-      background: linear-gradient(to left, #f2f2f2, #e6f0ff);
-      padding: 30px;
-      max-width: 700px;
-      margin: auto;
-      border-radius: 10px;
-      box-shadow: 0 0 15px rgba(0,0,0,0.1);
-    }
-    h1 {
-      text-align: center;
-      color: #333366;
-    }
-    label {
-      font-weight: bold;
-      margin-top: 10px;
-    }
-    input, button {
-      padding: 10px;
-      font-size: 1em;
-      width: 100%;
-      box-sizing: border-box;
-      margin-top: 5px;
-    }
-    button {
-      background-color: #3366cc;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      margin-top: 10px;
-    }
-    button:hover {
-      background-color: #254b9e;
-    }
-    .students-list {
-      margin-top: 20px;
-      background: #fff;
-      padding: 15px;
-      border-radius: 8px;
-    }
-    .teacher-controls {
-      display: none;
-      margin-top: 20px;
-      background: #eef;
-      padding: 15px;
-      border-radius: 10px;
-    }
-    .hidden {
-      display: none;
-    }
-    .code-change {
-      margin-top: 30px;
-      background: #fff3cd;
-      padding: 15px;
-      border-radius: 8px;
-      border: 1px solid #ffeeba;
-    }
+    body { font-family: 'Cairo', sans-serif; direction: rtl; background: #f9f9f9; padding: 20px; max-width: 700px; margin: auto; }
+    h1 { text-align: center; color: #333366; }
+    input, button { width: 100%; padding: 10px; margin: 8px 0; }
+    button { background-color: #3366cc; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    button:hover { background-color: #254b9e; }
+    .teacher-controls, .students-list { background: #fff; padding: 15px; margin-top: 15px; border-radius: 8px; }
+    .hidden { display: none; }
+    ul { padding-right: 20px; }
   </style>
 </head>
 <body>
   <h1>نظام تسجيل الغياب</h1>
 
   <div id="teacher-login" class="teacher-controls">
-    <h3>إعداد كود المدرس لأول مرة</h3>
-    <label for="new-code">أدخل كود جديد:</label>
-    <input type="password" id="new-code">
+    <h3>إعداد كود المدرس</h3>
+    <input type="password" id="new-code" placeholder="أدخل كود المدرس لأول مرة">
     <button onclick="saveTeacherCode()">حفظ الكود</button>
   </div>
 
-  <div id="teacher-access" class="teacher-controls">
+  <div id="teacher-access" class="teacher-controls hidden">
     <h3>تسجيل دخول المدرس</h3>
-    <label for="teacher-code">أدخل كود المدرس:</label>
-    <input type="password" id="teacher-code">
+    <input type="password" id="teacher-code" placeholder="أدخل كود المدرس">
     <button onclick="verifyTeacher()">دخول</button>
   </div>
 
   <div id="main-content" class="hidden">
     <div class="teacher-controls">
-      <label for="lecture-name">اسم المحاضرة:</label>
-      <input type="text" id="lecture-name" placeholder="مثال: رياضيات 101">
+      <input type="text" id="lecture-name" placeholder="اسم المحاضرة">
     </div>
 
-    <label for="student-name">أدخل اسمك:</label>
-    <input type="text" id="student-name">
+    <input type="text" id="student-name" placeholder="أدخل اسمك">
     <button onclick="addStudent()">تسجيل الحضور</button>
 
     <div class="students-list">
@@ -103,39 +48,33 @@
       <button onclick="generatePDF()">توليد ملف PDF</button>
     </div>
 
-    <div class="teacher-controls code-change">
+    <div class="teacher-controls">
       <h4>تغيير كود المدرس</h4>
-      <label for="old-code">الكود الحالي:</label>
-      <input type="password" id="old-code">
-
-      <label for="change-code">كود جديد:</label>
-      <input type="password" id="change-code">
-
+      <input type="password" id="old-code" placeholder="الكود الحالي">
+      <input type="password" id="change-code" placeholder="الكود الجديد">
       <button onclick="changeTeacherCode()">تغيير الكود</button>
+    </div>
 
-      <p style="color: #aa0000; font-size: 0.9em; margin-top:10px;">
-        إذا نسيت الكود، يجب مسح بيانات المتصفح من خلال "إعدادات الموقع" لإعادة ضبط النظام.
-      </p>
+    <div class="teacher-controls" style="background-color:#fee;">
+      <h4>إعادة ضبط النظام</h4>
+      <p>سيتم حذف جميع البيانات وكود المدرس من المتصفح.</p>
+      <button style="background-color:#cc0000;" onclick="resetAll()">مسح كل البيانات</button>
     </div>
   </div>
 
   <script>
     let students = [];
 
-    window.onload = function() {
+    window.onload = () => {
       const storedCode = localStorage.getItem("teacherCode");
-      if (!storedCode) {
-        document.getElementById("teacher-login").style.display = "block";
-      } else {
-        document.getElementById("teacher-access").style.display = "block";
-      }
+      document.getElementById(storedCode ? "teacher-access" : "teacher-login").classList.remove("hidden");
     };
 
     function saveTeacherCode() {
       const code = document.getElementById("new-code").value.trim();
       if (code.length >= 3) {
         localStorage.setItem("teacherCode", code);
-        alert("تم حفظ كود المدرس. يرجى إعادة تحميل الصفحة.");
+        alert("تم حفظ الكود.");
         location.reload();
       } else {
         alert("الكود يجب أن يكون 3 أحرف أو أكثر.");
@@ -144,11 +83,10 @@
 
     function verifyTeacher() {
       const entered = document.getElementById("teacher-code").value.trim();
-      const saved = localStorage.getItem("teacherCode");
-      if (entered === saved) {
+      if (entered === localStorage.getItem("teacherCode")) {
         document.getElementById("main-content").classList.remove("hidden");
-        document.querySelectorAll(".teacher-controls").forEach(el => el.style.display = "block");
-        document.getElementById("teacher-access").style.display = "none";
+        document.querySelectorAll(".teacher-controls").forEach(e => e.classList.remove("hidden"));
+        document.getElementById("teacher-access").classList.add("hidden");
       } else {
         alert("كود غير صحيح.");
       }
@@ -157,18 +95,13 @@
     function changeTeacherCode() {
       const oldCode = document.getElementById("old-code").value.trim();
       const newCode = document.getElementById("change-code").value.trim();
-      const saved = localStorage.getItem("teacherCode");
-
-      if (oldCode !== saved) {
+      if (oldCode !== localStorage.getItem("teacherCode")) {
         alert("الكود الحالي غير صحيح.");
         return;
       }
-
       if (newCode.length >= 3) {
         localStorage.setItem("teacherCode", newCode);
-        alert("تم تغيير كود المدرس بنجاح.");
-        document.getElementById("old-code").value = "";
-        document.getElementById("change-code").value = "";
+        alert("تم تغيير الكود.");
       } else {
         alert("الكود الجديد يجب أن يكون 3 أحرف أو أكثر.");
       }
@@ -178,17 +111,17 @@
       const name = document.getElementById("student-name").value.trim();
       if (name) {
         students.push(name);
-        document.getElementById("student-name").value = "";
         updateList();
+        document.getElementById("student-name").value = "";
       }
     }
 
     function updateList() {
       const list = document.getElementById("students-list");
       list.innerHTML = "";
-      students.forEach((name, index) => {
+      students.forEach((name, i) => {
         const li = document.createElement("li");
-        li.textContent = (index + 1) + "- " + name;
+        li.textContent = `${i + 1}- ${name}`;
         list.appendChild(li);
       });
     }
@@ -202,21 +135,21 @@
           { text: `اسم المحاضرة: ${lecture}`, margin: [0, 10, 0, 0] },
           { text: `التاريخ: ${today}`, margin: [0, 0, 0, 10] },
           { text: "قائمة الحضور:" },
-          {
-            ol: students
-          }
+          { ol: students }
         ],
-        defaultStyle: {
-          font: 'Cairo'
-        },
+        defaultStyle: { font: 'Cairo' },
         styles: {
-          header: {
-            fontSize: 18,
-            bold: true
-          }
+          header: { fontSize: 18, bold: true }
         }
       };
-      pdfMake.createPdf(docDefinition).download(`${lecture} - ${today}.pdf`);
+      pdfMake.createPdf(docDefinition).download(`${lecture}-${today}.pdf`);
+    }
+
+    function resetAll() {
+      if (confirm("هل تريد حذف جميع البيانات؟")) {
+        localStorage.clear();
+        location.reload();
+      }
     }
   </script>
 </body>
