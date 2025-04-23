@@ -58,6 +58,7 @@
     <div class="teacher-controls" style="background-color:#fee;">
       <h4>إعادة ضبط النظام</h4>
       <p>سيتم حذف جميع البيانات وكود المدرس من المتصفح.</p>
+      <input type="password" id="delete-code" placeholder="أدخل كود المدرس لتأكيد الحذف">
       <button style="background-color:#cc0000;" onclick="resetAll()">مسح كل البيانات</button>
     </div>
   </div>
@@ -146,8 +147,17 @@
     }
 
     function resetAll() {
-      if (confirm("هل تريد حذف جميع البيانات؟")) {
+      const enteredCode = document.getElementById("delete-code").value.trim();
+      const savedCode = localStorage.getItem("teacherCode");
+
+      if (enteredCode !== savedCode) {
+        alert("كود المدرس غير صحيح، لا يمكن مسح البيانات.");
+        return;
+      }
+
+      if (confirm("هل تريد فعلاً حذف كل البيانات؟")) {
         localStorage.clear();
+        alert("تم حذف البيانات بنجاح.");
         location.reload();
       }
     }
