@@ -1,36 +1,95 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <title>تسجيل الغياب</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/plugins/addFonts.js"></script>
+  <title>تسجيل الغياب - يدعم العربية</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.72/pdfmake.min.js"></script>
+  <script src="vfs_fonts.js"></script>
   <style>
-    body { font-family: 'Arial', sans-serif; direction: rtl; padding: 20px; background-color: #f4f4f4; }
-    label, input, button { display: block; margin: 10px 0; }
-    .students-list { margin-top: 20px; }
+    body {
+      font-family: 'Cairo', sans-serif;
+      direction: rtl;
+      background: linear-gradient(to left, #f2f2f2, #e6f0ff);
+      padding: 30px;
+      max-width: 700px;
+      margin: auto;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    }
+    h1 {
+      text-align: center;
+      color: #333366;
+    }
+    label {
+      font-weight: bold;
+      margin-top: 10px;
+    }
+    input, button {
+      padding: 10px;
+      font-size: 1em;
+      width: 100%;
+      box-sizing: border-box;
+      margin-top: 5px;
+    }
+    button {
+      background-color: #3366cc;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    button:hover {
+      background-color: #254b9e;
+    }
+    .students-list {
+      margin-top: 20px;
+      background: #fff;
+      padding: 15px;
+      border-radius: 8px;
+    }
+    .teacher-controls {
+      display: none;
+      margin-top: 20px;
+      background: #eef;
+      padding: 15px;
+      border-radius: 10px;
+    }
+    .hidden {
+      display: none;
+    }
+    .code-change {
+      margin-top: 30px;
+      background: #fff3cd;
+      padding: 15px;
+      border-radius: 8px;
+      border: 1px solid #ffeeba;
+    }
   </style>
 </head>
 <body>
   <h1>نظام تسجيل الغياب</h1>
 
-  <!-- واجهة كود المدرّس -->
-  <div id="auth-div">
-    <label for="teacher-code">ادخل كود المدرس:</label>
-    <input type="password" id="teacher-code" placeholder="كود المدرس">
-    <button onclick="checkCode()">دخول</button>
+  <div id="teacher-login" class="teacher-controls">
+    <h3>إعداد كود المدرس لأول مرة</h3>
+    <label for="new-code">أدخل كود جديد:</label>
+    <input type="password" id="new-code">
+    <button onclick="saveTeacherCode()">حفظ الكود</button>
   </div>
 
-  <!-- واجهة إدخال المحاضرة -->
-  <div id="lecture-div" style="display:none;">
-    <label for="lecture-name">اسم المحاضرة:</label>
-    <input type="text" id="lecture-name" placeholder="مثال: كيمياء عضوية 2">
-    <button onclick="startLecture()">بدء المحاضرة</button>
+  <div id="teacher-access" class="teacher-controls">
+    <h3>تسجيل دخول المدرس</h3>
+    <label for="teacher-code">أدخل كود المدرس:</label>
+    <input type="password" id="teacher-code">
+    <button onclick="verifyTeacher()">دخول</button>
   </div>
 
-  <!-- واجهة تسجيل الغياب -->
-  <div id="attendance-div" style="display:none;">
-    <h2 id="lecture-title"></h2>
+  <div id="main-content" class="hidden">
+    <div class="teacher-controls">
+      <label for="lecture-name">اسم المحاضرة:</label>
+      <input type="text" id="lecture-name" placeholder="مثال: رياضيات 101">
+    </div>
+
     <label for="student-name">أدخل اسمك:</label>
     <input type="text" id="student-name">
     <button onclick="addStudent()">تسجيل الحضور</button>
@@ -40,45 +99,71 @@
       <ul id="students-list"></ul>
     </div>
 
-    <button onclick="generatePDF()">إنهاء وتوليد PDF</button>
+    <div class="teacher-controls">
+      <button onclick="generatePDF()">توليد ملف PDF</button>
+    </div>
+
+    <div class="teacher-controls code-change">
+      <h4>تغيير كود المدرس</h4>
+      <label for="change-code">كود جديد:</label>
+      <input type="password" id="change-code">
+      <button onclick="changeTeacherCode()">تغيير الكود</button>
+    </div>
   </div>
 
   <script>
     let students = [];
-    let lectureName = "";
-    const correctCode = "1234"; // كود المدرس السري
 
-    function checkCode() {
-      const code = document.getElementById("teacher-code").value.trim();
-      if (code === correctCode) {
-        document.getElementById("auth-div").style.display = "none";
-        document.getElementById("lecture-div").style.display = "block";
+    window.onload = function() {
+      const storedCode = localStorage.getItem("teacherCode");
+      if (!storedCode) {
+        document.getElementById("teacher-login").style.display = "block";
       } else {
-        alert("الكود غير صحيح.");
+        document.getElementById("teacher-access").style.display = "block";
+      }
+    };
+
+    function saveTeacherCode() {
+      const code = document.getElementById("new-code").value.trim();
+      if (code.length >= 3) {
+        localStorage.setItem("teacherCode", code);
+        alert("تم حفظ كود المدرس. يرجى إعادة تحميل الصفحة.");
+        location.reload();
+      } else {
+        alert("الكود يجب أن يكون 3 أحرف أو أكثر.");
       }
     }
 
-    function startLecture() {
-      const nameInput = document.getElementById("lecture-name");
-      lectureName = nameInput.value.trim();
-      if (!lectureName) {
-        alert("يرجى إدخال اسم المحاضرة.");
-        return;
+    function verifyTeacher() {
+      const entered = document.getElementById("teacher-code").value.trim();
+      const saved = localStorage.getItem("teacherCode");
+      if (entered === saved) {
+        document.getElementById("main-content").classList.remove("hidden");
+        document.querySelectorAll(".teacher-controls").forEach(el => el.style.display = "block");
+        document.getElementById("teacher-access").style.display = "none";
+      } else {
+        alert("كود غير صحيح.");
       }
-      document.getElementById("lecture-title").innerText = `المحاضرة: ${lectureName}`;
-      document.getElementById("lecture-div").style.display = "none";
-      document.getElementById("attendance-div").style.display = "block";
+    }
+
+    function changeTeacherCode() {
+      const newCode = document.getElementById("change-code").value.trim();
+      if (newCode.length >= 3) {
+        localStorage.setItem("teacherCode", newCode);
+        alert("تم تغيير كود المدرس بنجاح.");
+        document.getElementById("change-code").value = "";
+      } else {
+        alert("الكود يجب أن يكون 3 أحرف أو أكثر.");
+      }
     }
 
     function addStudent() {
       const name = document.getElementById("student-name").value.trim();
-      if (!name) {
-        alert("يرجى إدخال الاسم.");
-        return;
+      if (name) {
+        students.push(name);
+        document.getElementById("student-name").value = "";
+        updateList();
       }
-      students.push(name);
-      updateList();
-      document.getElementById("student-name").value = "";
     }
 
     function updateList() {
@@ -86,29 +171,35 @@
       list.innerHTML = "";
       students.forEach((name, index) => {
         const li = document.createElement("li");
-        li.textContent = `${index + 1}- ${name}`;
+        li.textContent = (index + 1) + "- " + name;
         list.appendChild(li);
       });
     }
 
-    async function generatePDF() {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-      const date = new Date().toLocaleDateString('ar-EG');
-
-      doc.setFont('Amiri', 'normal'); // تعيين الخط العربي
-      doc.setFontSize(16);
-      doc.text(`تقرير غياب المحاضرة`, 105, 20, { align: "center" });
-      doc.setFontSize(12);
-      doc.text(`المحاضرة: ${lectureName}`, 20, 40);
-      doc.text(`التاريخ: ${date}`, 20, 50);
-      doc.text(`الحضور:`, 20, 60);
-
-      students.forEach((name, i) => {
-        doc.text(`${i + 1}- ${name}`, 30, 70 + i * 10);
-      });
-
-      doc.save(`${lectureName}-${date}.pdf`);
+    function generatePDF() {
+      const lecture = document.getElementById("lecture-name").value.trim() || "محاضرة غير مسماة";
+      const today = new Date().toLocaleDateString("ar-EG");
+      const docDefinition = {
+        content: [
+          { text: "تقرير الغياب", style: "header", alignment: "center" },
+          { text: `اسم المحاضرة: ${lecture}`, margin: [0, 10, 0, 0] },
+          { text: `التاريخ: ${today}`, margin: [0, 0, 0, 10] },
+          { text: "قائمة الحضور:" },
+          {
+            ol: students
+          }
+        ],
+        defaultStyle: {
+          font: 'Cairo'
+        },
+        styles: {
+          header: {
+            fontSize: 18,
+            bold: true
+          }
+        }
+      };
+      pdfMake.createPdf(docDefinition).download(`${lecture} - ${today}.pdf`);
     }
   </script>
 </body>
